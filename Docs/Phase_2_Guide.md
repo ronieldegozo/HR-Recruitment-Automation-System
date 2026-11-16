@@ -1,12 +1,12 @@
-# RecruitFlow Phase 2 — Step-by-Step Guide
+# RecruitFlow Phase 2 — Quarkus Backend Foundation Guide
 
-**Purpose:** Explain what Phase 2 means, what you will build, and what must be true before moving to Phase 3.
+**Purpose:** Explain what Phase 2 means, what to build, and what must be true before Phase 3.
 
-**Current status:** Phase 1 is complete. The n8n workflow receives CVs by Gmail, validates attachments, uses LlamaParse and OpenAI GPT-4.1 to extract applicant details, saves structured information to Supabase Postgres, and sends an acknowledgment email.
+**Current status (2026-11-10):** Phase 1 is complete. The `Backend` folder now contains a generated Quarkus Maven project using Java 25 and Quarkus platform 3.40.1.2. The Supabase datasource, read-only data mapping/query, and database role/policy are not yet configured or verified. The generated starter still needs cleanup before it is connected to the existing database.
 
 ## Phase 2 in one sentence
 
-Build the first Spring Boot backend and connect it safely to the **existing Supabase Postgres database**, so the backend can read current application records without interrupting the working n8n intake.
+Prepare a Quarkus backend that can safely read the existing Supabase Postgres applications table while n8n continues to own applicant intake and writes.
 
 ```mermaid
 flowchart LR
@@ -14,172 +14,194 @@ flowchart LR
   n8n --> Parse[Parse CV and extract facts with AI]
   Parse --> DB[(Supabase Postgres<br/>job_applications)]
   n8n -. receipt acknowledgment .-> Gmail
-  DB --> Backend[Spring Boot<br/>read-only in Phase 2]
+  DB --> Backend[Quarkus backend<br/>read-only in Phase 2]
 ```
 
-During Phase 2, n8n continues saving applications directly to Supabase. The backend does not take over the writes yet. That handoff is planned for Phase 4, after the API is built and secured.
+During Phase 2, n8n remains the only intake writer. The backend must not create or alter the live schema. Routing n8n through a secured backend API is planned for Phase 4, after the Phase 3 API has been designed, secured, and verified.
 
 ## What you should have at the end
 
-- A written description of the current `public.job_applications` table and what each field means.
-- A decision for how applicants, applications, and jobs will relate in the future.
-- A Spring Boot project in the `Backend` folder.
-- A backend connection to the same Supabase Postgres project.
-- A successful, limited, read-only database check from Spring Boot.
-- A health endpoint and setup instructions.
-- No changes to the live n8n intake logic or current database records.
+- A written description of the current `public.job_applications` data contract.
+- A reviewed proposal for how applicants, applications, and jobs will relate in the future.
+- A clean Quarkus project in `Backend`, retaining its Java 25 and Quarkus 3.40.1.2 Maven setup.
+- A dedicated, least-privilege Supabase database role with an appropriate RLS policy.
+- A Quarkus read-only connection and count/read smoke check against the existing table.
+- A working Quarkus health endpoint and clear local run instructions.
+- No disruption to the Phase 1 n8n workflow or existing Supabase records.
 
-## Before you start
+## Before starting
 
-You need access to the RecruitFlow repository, the Supabase project, and the n8n workflow. You will also need Java 17 or newer and a Java build tool such as Maven. Keep database passwords and tokens in a local environment file or secrets manager; do not put their values in this guide, Git, screenshots, or chat.
+You need access to the project repository, Supabase, and n8n. Java 25 and the Maven Wrapper are already part of the current setup. Quarkus CLI is optional; use `Backend/mvnw.cmd` from PowerShell. Keep database passwords in local environment variables or a secrets manager, never in Git or this guide.
 
-## Step 1 — Write down the current database contract
+## Step 1 — Document the current database contract
 
-**What this means:** A data contract is a plain description of the information the current workflow saves. It helps the backend use the exact existing field names and prevents accidental renaming or data loss.
+**What this means:** Record the existing fields and rules so Quarkus maps the live table accurately and does not accidentally rename or recreate it.
 
 The current table is `public.job_applications`. Its fields include:
 
 | Field | Meaning |
 |---|---|
-| `id` | Unique database ID for this saved application row. |
+| `id` | Unique database ID for an application row. |
 | `applicant_email` | Email address from the incoming message. |
-| `applicant_name` | Name available from the email sender, when present. |
-| `extracted_full_name` | Name the AI found in the CV, when present. |
-| `gmail_message_id` | Gmail message identifier; unique and used to avoid duplicate application rows. |
+| `applicant_name` | Sender name from the email, when available. |
+| `extracted_full_name` | Name the AI found in the CV, when available. |
+| `gmail_message_id` | Unique Gmail message ID used to prevent duplicate rows. |
 | `gmail_thread_id` | Gmail conversation identifier. |
 | `email_subject` | Subject of the application email. |
-| `email_received_at` | Time the application email was received. |
-| `resume_files` | JSON metadata about attachments, such as filename, type, and size. The actual file is still in Gmail. |
-| `applicant_mobile_number` | Phone number extracted from the CV, when present. |
-| `home_address` | Address extracted from the CV, when present. |
-| `work_experience` | JSON list of work history extracted from the CV. |
-| `status` | Recruitment status; new records currently start as `received`. |
-| `extraction_status` | AI processing result: `pending`, `completed`, `needs_review`, or `failed`. |
+| `email_received_at` | Time the email was received. |
+| `resume_files` | JSON attachment metadata; the original CV remains in Gmail. |
+| `applicant_mobile_number` | Phone number extracted from the CV, when available. |
+| `home_address` | Address extracted from the CV, when available. |
+| `work_experience` | JSON work history extracted from the CV. |
+| `status` | Recruitment status; new rows currently start as `received`. |
+| `extraction_status` | AI processing state: `pending`, `completed`, `needs_review`, or `failed`. |
 | `extracted_at` | Time the extraction result was recorded. |
 | `created_at` | Time the row was created in Postgres. |
 
-**What to do:** Add a short data dictionary to the project documentation. For each field, record its type, whether it can be empty, its source (email, CV extraction, or database), and any uniqueness rule. Describe field meanings only; do not put real applicant values in the document.
+**Do:** Use `Docs/Phase_2_Data_Contract.md` as the data dictionary. Describe field meanings and types; do not add real applicant values.
 
-**Expected result:** A developer can tell which name is from the email and which name is extracted from the CV, and can explain how duplicate emails are prevented.
+**Expected result:** A developer can distinguish email-supplied values from CV-extracted values and explain duplicate protection.
 
-## Step 2 — Decide how the future data model should work
+## Step 2 — Decide the future recruitment data model
 
-**What this means:** The current table stores email, applicant, application, and attachment details together. The future HR system may want separate tables so one person can have more than one application and each application can be connected to a job.
+The current table combines email, applicant, application, and attachment information. The future system may separate these concepts:
 
-Agree on these concepts:
+- **Applicant:** Person and contact/profile information.
+- **Application:** One submission by an applicant, with its own received time and recruitment status.
+- **Job:** Position title, description, and requirements.
+- **Resume:** File metadata and a private reference to the original CV.
 
-- **Applicant:** A person and their contact/profile information.
-- **Application:** One submission by an applicant for a particular job, with its own received date and recruitment status.
-- **Job:** A position with a title, description, and requirements.
-- **Resume:** File metadata and, later, a private storage reference to the original CV.
+A likely model allows one applicant to have multiple applications, one job to have multiple applications, and each application to belong to one applicant and optionally one job. Since Phase 1 does not reliably assign every email to a job, record that as an unresolved business decision.
 
-A likely future relationship is: one applicant can have many applications; one job can have many applications; each application belongs to one applicant and may be associated with one job. The current Phase 1 workflow does not reliably assign emails to a job yet, so document that as a later decision.
+**Do:** Document the proposed relationships and map existing fields to them. Do not create future tables in this phase. Keep `public.job_applications` and its records unchanged.
 
-**What to do:** Draw or write this proposed relationship and map the existing `job_applications` fields to it. Record which information is missing or mixed together. Do not create all future tables just because they appear in the long-term plan.
+## Step 3 — Set a least-privilege Supabase access model
 
-**Expected result:** A reviewed model proposal and a list of any schema changes that are actually needed later. Keep the existing table and data as they are during Phase 2.
+1. Keep Supabase Postgres as the single source of truth; do not make a MySQL copy.
+2. Provision a dedicated database login for the Quarkus backend. It should not own the database and must not have `BYPASSRLS`.
+3. Grant only the access needed for the Phase 2 read check. The current table has RLS enabled and no policies, so a SELECT grant alone is not sufficient; prepare and review the role-scoped policy SQL inside `Backend/database/`; do not run it against Supabase until the role and requested change have been reviewed.
+4. Use a supported Supabase direct connection or Session Pooler for the service's deployment environment. For a Hibernate/JPA datasource, avoid the transaction pooler.
+5. Use SSL. Put the URL, username, and password in local environment variables or a secrets manager.
 
-## Step 3 — Decide how the backend will access the database
+**Never:** Use the database owner or a `service_role`/secret API key as the routine datasource credential, commit credentials, or expose applicant records publicly.
 
-**What this means:** The backend needs permission to read the data, but it should not connect as the database owner or get more access than it needs.
+## Step 4 — Clean and confirm the Quarkus Maven project
 
-**What to do:**
+The `Backend` folder already has the Quarkus Maven project. Preserve the Java 25 compiler setting, Quarkus BOM, and Quarkus Maven plugin unless a later decision explicitly changes them.
 
-1. Keep Supabase Postgres as the single source of truth. Do not create a MySQL copy.
-2. Create or request a dedicated database role for the Spring Boot service. For Phase 2, it only needs the read permission required for the smoke check.
-3. Confirm how Row Level Security (RLS) and database grants apply to this direct Postgres connection. The existing table has RLS enabled, but that does not replace authentication and authorization in the future HR API.
-4. Choose a Supabase connection method appropriate for where Spring Boot will run. Use Supabase’s direct-connection and pooler guidance for the deployment environment.
-5. Store the database URL, username, and password outside the source code. Commit only the variable names in an example environment file, never real values.
+For this Java REST/JPA/Postgres backend, the intended runtime capabilities are:
 
-**Avoid:** Using the `postgres` owner login for normal application access, putting a secret/service-role key in frontend code, or making applicant data available from a public endpoint.
+- `quarkus-rest-jackson` — REST resources with JSON support.
+- `quarkus-hibernate-orm-panache` — Hibernate ORM using the repository pattern.
+- `quarkus-jdbc-postgresql` — PostgreSQL JDBC datasource.
+- `quarkus-smallrye-health` — liveness/readiness health endpoints.
 
-**Expected result:** The access method and permissions are documented, and the backend can connect with a separate, restricted account.
+Use the Quarkus BOM to manage extension versions. Keep test dependencies such as `quarkus-junit` and `rest-assured` in test scope. Avoid duplicate selections (for example REST plus REST Jackson, ORM plus Panache) and remove Kotlin-specific Panache from this Java project unless Kotlin is deliberately adopted.
 
-## Step 4 — Create the Spring Boot project
+Remove generated sample artifacts such as `GreetingResource`, `MyEntity`, and unrelated sample SQL before connecting this project to Supabase. Keep the package structure understandable:
 
-**What this means:** Spring Boot will be the server-side application between the future HR dashboard and Supabase. It will later provide APIs for reading applications and updating recruitment status.
+```text
+model/       JPA/domain models
+repository/  database queries
+service/     use cases and transaction boundaries
+resource/    Quarkus REST endpoints (controller equivalent)
+dto/         request and response contracts
+config/      runtime configuration and health checks
+```
 
-**What to do:** Create a Spring Boot project under `Backend`. Start with:
+Phase 2 does not expose applicant REST resources. The `resource/` and `dto/` packages can remain empty until a secured API is designed.
 
-- Spring Web, for health endpoints and later APIs.
-- Spring Data JPA, to map and read Postgres data.
-- PostgreSQL JDBC driver, to connect to Postgres.
-- Bean Validation, to validate future API inputs.
+**Expected result:** The generated demo is replaced by a clean Quarkus foundation, with only the Java extensions this backend needs.
 
-Choose and record the Java and dependency versions. Commit the build file and lock down dependency versions as appropriate for the build tool.
+## Step 5 — Configure the datasource safely
 
-**Expected result:** The project builds and starts locally, even before the HR API is implemented.
+Configure `application.properties` to read datasource details from the process environment. Use the Quarkus datasource property names:
 
-## Step 5 — Add safe database configuration
+- `QUARKUS_DATASOURCE_JDBC_URL`
+- `QUARKUS_DATASOURCE_USERNAME`
+- `QUARKUS_DATASOURCE_PASSWORD`
 
-**What this means:** The app needs connection settings, but these must not be embedded in Java source or committed to Git.
+For a local PowerShell session, set the values without saving secrets to a tracked file:
 
-**What to do:** Configure Spring’s datasource using environment variables. For example, document names such as `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, and `SPRING_DATASOURCE_PASSWORD` in `.env.example`, with blank or placeholder values only. Put actual credentials in a local ignored `.env` file or a secrets manager.
+```powershell
+$env:QUARKUS_DATASOURCE_JDBC_URL = 'jdbc:postgresql://YOUR_SESSION_POOLER_HOST:5432/postgres?sslmode=require'
+$env:QUARKUS_DATASOURCE_USERNAME = 'recruitflow_backend_readonly'
+$env:QUARKUS_DATASOURCE_PASSWORD = 'YOUR_LOCAL_ROLE_PASSWORD'
+```
 
-Configure JPA so the application validates or leaves the schema alone. Do not let Hibernate automatically create, rename, or update database tables. Phase 2 is not a schema migration phase.
+Use the actual connection string from Supabase. For stronger server identity verification, download the current Supabase database CA certificate and configure `sslmode=verify-full` with its local path.
 
-**Expected result:** The backend can be configured on your computer or server without changing source code or exposing credentials.
+Before connecting to the real Supabase database, configure Hibernate ORM to make no schema changes and disable SQL seed scripts. In particular, use `quarkus.hibernate-orm.schema-management.strategy=none` and disable data/import scripts. Do not use `drop-and-create`, `create`, or `update` against the Supabase project. The generated `import.sql` is currently only a commented demo. Remove it or explicitly disable it before connecting to Supabase; it must never seed or change the production database.
 
-## Step 6 — Map the existing table as read-only
+**Expected result:** Quarkus connects only with local secrets and will not create, update, drop, or seed the Supabase schema.
 
-**What this means:** Create only the Java mapping and repository needed to read the current application rows. This proves the backend can use real Phase 1 data before any API or workflow ownership changes.
+## Step 6 — Add the read-only model, repository, and service
 
-**What to do:** Map the required columns from `public.job_applications` and create a repository with a small, limited read query. Keep the Phase 2 database account read-only. Do not add endpoints that return applicant data to the public internet.
+1. Map only the required fields of `public.job_applications` in a read-only JPA model.
+2. Keep the repository narrow: a count or limited, paginated query only. Do not add write methods in Phase 2.
+3. Put query use cases in a service and mark read transactions read-only.
+4. Do not return entities or applicant PII from a public REST resource. Phase 2 has no applicant API.
+5. Keep n8n as the only intake writer until Phase 4.
 
-**Expected result:** The backend can retrieve a limited set of existing application records in a local development run, and the n8n workflow remains the only intake writer.
+**Expected result:** A local Quarkus run can execute a limited read query using the restricted database role, without writing or exposing applicant data.
 
-## Step 7 — Add health checks and verify the connection
+## Step 7 — Add health checks and verify the read path
 
-**What this means:** A health check tells you whether the backend is running. A database readiness check tells you whether it can reach Postgres.
+Use SmallRye Health endpoints such as `/q/health/live` and `/q/health/ready`. Liveness confirms the process is running; readiness should report whether the service is ready for work. Do not include passwords, connection strings, CV text, or applicant fields in health responses or logs.
 
-**What to do:** Add a health endpoint that reports service health without revealing credentials, SQL, CV contents, or applicant details. Run the backend locally and verify that its database connection and read-only query succeed. Check application logs to make sure they do not print full CV text, addresses, phone numbers, passwords, or connection strings.
+Run the Maven Wrapper from `Backend`:
 
-**Expected result:** You can start the service, see that it is healthy, and confirm the read path works without writing or changing any database data.
+```powershell
+.\mvnw.cmd quarkus:dev
+```
 
-## Step 8 — Record the handoff to Phase 3
+Check health in a browser or PowerShell at `http://localhost:8080/q/health`. Enable a minimal read check only after the database role, RLS policy, URL, and SSL settings are ready. Confirm that it reads a count or a small result and never logs applicant details.
 
-Write down:
+**Expected result:** The app starts, health is visible, and a read-only database check succeeds without schema or data changes.
 
-- How to run the backend locally.
-- The environment variable names it needs (not their values).
-- The current table and the proposed applicant/application/job model.
-- The database access role and connection method.
-- What API operations Phase 3 should add.
-- Any unresolved decision, especially how an incoming email will be linked to a job.
+## Step 8 — Prepare the Phase 3 handoff
 
-**Expected result:** Someone can continue with Phase 3 without guessing how Phase 1 data is stored or how to start the backend.
+Record the local run steps, Quarkus version, extension list, environment variable names, current table mapping, access role/policy, and agreed applicant/application/job relationships. List the endpoints Phase 3 will add and identify authentication and authorization requirements before exposing applicant data.
 
 ## Phase 2 completion checklist
 
-- [ ] The current table and fields are documented without real applicant data.
-- [ ] Applicant, application, and job concepts and their relationships are agreed.
-- [ ] Supabase Postgres remains the only recruitment database.
-- [ ] The Spring Boot project starts successfully.
-- [ ] The backend connects using a dedicated, least-privilege database account.
-- [ ] The backend can perform a limited read-only query against existing application rows.
-- [ ] JPA does not create or change the database schema automatically.
-- [ ] Health checks work and logs do not expose secrets or CV contents.
-- [ ] The active n8n intake continues to save applications as before.
-- [ ] Local setup and Phase 3 handoff decisions are documented.
+- [x] Phase 1 data contract documented in `Docs/Phase_2_Data_Contract.md`.
+- [x] Quarkus Maven project scaffold exists in `Backend` with Java 25 and Quarkus 3.40.1.2.
+- [ ] Generated starter code and redundant/non-Java extensions are cleaned up.
+- [ ] Applicant, application, and job relationships are reviewed and agreed.
+- [ ] A dedicated least-privilege role and role-scoped RLS SELECT policy are provisioned.
+- [ ] Quarkus datasource configuration uses environment variables and SSL.
+- [ ] Hibernate schema generation and seed scripts are explicitly disabled for Supabase.
+- [ ] Read-only model, repository, and service query the existing table.
+- [ ] Quarkus starts and health endpoints work.
+- [ ] A limited read-only query succeeds against Supabase.
+- [ ] Phase 1 n8n intake continues unchanged as the only writer.
+- [ ] Local setup and the Phase 3 handoff are documented.
 
 ## What Phase 2 does not include
 
-Phase 2 does not build the full applicant/job/application API, HR login, dashboard, CV file storage, AI job matching, HR reminder automation, or a migration of n8n writes to Spring Boot. Those belong to later phases. In particular, n8n should not be changed to call Spring Boot until Phase 3 has a secured ingestion API and Phase 4 is ready to integrate it.
+Phase 2 does not build applicant/job/application CRUD APIs, HR login, a dashboard, CV file storage, AI job matching, HR reminders, or the n8n-to-backend write handoff. Those belong to later phases. Do not route n8n through Quarkus until the Phase 3 API is authenticated and Phase 4 integration is ready.
 
 ## Simple glossary
 
-- **Data contract:** The documented field names, types, meanings, and rules used to exchange or store data.
-- **Least privilege:** Give a service only the permissions needed for its current task.
-- **JPA entity:** A Java class that represents a database table or view.
-- **Repository:** The Java component that reads or writes data through JPA.
-- **RLS:** Row Level Security, a Postgres feature that filters which rows a database/API role can access.
-- **Migration:** A reviewed, versioned change to a database schema.
-- **Connection pooler:** A service that manages reusable database connections for an application.
+- **Data contract:** Documented field names, types, meanings, and storage rules.
+- **Least privilege:** Give a service only the permissions required for its current task.
+- **JPA entity:** A Java class mapped to a database table or view.
+- **Repository:** The persistence component that executes database queries.
+- **REST resource:** A Quarkus HTTP endpoint class; it serves the role commonly called a controller in Spring applications.
+- **RLS:** Row Level Security, which restricts which rows a Postgres role can access.
+- **Migration:** A reviewed, versioned database schema change.
+- **Connection pooler:** A service that manages reusable database connections.
 
 ## Official references
 
+- [Quarkus Maven tooling](https://quarkus.io/guides/maven-tooling)
+- [Quarkus REST](https://quarkus.io/guides/rest)
+- [Quarkus Hibernate ORM with Panache](https://quarkus.io/guides/hibernate-orm-panache)
+- [Quarkus Hibernate ORM schema management](https://quarkus.io/guides/hibernate-orm)
+- [Quarkus SmallRye Health](https://quarkus.io/guides/smallrye-health)
 - [Supabase: Connecting to Postgres](https://supabase.com/docs/guides/database/connecting-to-postgres)
 - [Supabase: Postgres roles](https://supabase.com/docs/guides/database/postgres/roles)
 - [Supabase: Securing your data](https://supabase.com/docs/guides/database/secure-data)
 - [Supabase: Row Level Security](https://supabase.com/docs/guides/database/postgres/row-level-security)
-- [Spring Initializr](https://start.spring.io/)
+

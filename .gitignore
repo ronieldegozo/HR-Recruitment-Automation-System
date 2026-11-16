@@ -1,0 +1,18 @@
+# Local secrets and environment configuration
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+Databases/db_password.txt
+
+# Java / Maven build output
+**/target/
+
+# IDE and operating-system files
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
