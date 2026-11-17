@@ -186,3 +186,29 @@ For role and account management, send `Authorization: Bearer <Super Admin access
 ## Credential rotation
 
 Database passwords, a service-role key, and account passwords were shared during setup. Treat the shared values as exposed. Rotate the Supabase database credentials and service-role key in the Supabase Dashboard, update the local environment values, reset any affected Auth account passwords, and issue fresh sessions. Do not copy the previously shared values into this or any other tracked file.
+
+## Deploy the backend to Render
+
+The backend is prepared to deploy as a Docker Web Service. Keep all credentials in Render environment variables; do not add them to Git.
+
+In the Render Dashboard, create a **Web Service** from this GitHub repository and set:
+
+- Branch: `backend_dev`
+- Root Directory: `Backend`
+- Runtime: `Docker`
+- Dockerfile Path: `Dockerfile`
+- Health Check Path: `/q/health/ready`
+
+Add these environment variables under the service's **Environment** page:
+
+| Key | Value |
+| --- | --- |
+| `QUARKUS_HTTP_HOST` | `0.0.0.0` |
+| `SUPABASE_URL` | Your Supabase project URL |
+| `SUPABASE_PUBLISHABLE_KEY` | Your Supabase publishable key |
+| `SUPABASE_SERVICE_ROLE_KEY` | Your rotated Supabase service-role key; secret |
+| `RECRUITFLOW_DB_PASSWORD` | Password for the restricted `recruitflow_backend_readonly` role; secret |
+
+Render supplies `PORT`; Quarkus reads it from the environment. Do not set the database password to the Supabase `postgres` owner password. After adding the variables, choose **Save, rebuild, and deploy**. Wait for the service's deploy to reach **Live** and verify `/q/health/ready` returns `UP` before testing login or admin routes.
+
+If GitHub CI is connected to the branch, enable Render's CI check gating if that option is available so deploys wait for the backend CI workflow to pass.
