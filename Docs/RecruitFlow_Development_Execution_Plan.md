@@ -158,15 +158,15 @@ This is the implemented Phase 1 scope, expanded from the original Gmail-only pro
 ------------------------------------------------------------------------
 # Phase 2 --- Supabase data model and Quarkus backend foundation
 
-**Status: In progress — Quarkus Maven starter generated in `Backend` with Java 25 and Quarkus 3.40.1.2. Demo cleanup, Supabase datasource configuration, read-only mapping/query, database role/RLS policy, and runtime verification remain pending.**
+**Status: Complete (2026-11-17).** The Quarkus backend foundation is in `Backend`; its restricted read-only connection to live Supabase Postgres and health/readiness checks were verified. A backend-only GitHub Actions CI pipeline is in place, with successful checks on `backend_dev` and pull requests. Applicant APIs, HR authentication, dashboard work, deployment, and routing n8n writes through the backend remain future phases.
 
 **Goal:** Prepare a secure Quarkus foundation that reads the data created in Phase 1. Keep Supabase Postgres as the single source of truth. Do not create a parallel MySQL database, copy applicant records, or move the live n8n writes yet.
 
 ### Phase 2 step-by-step
 
 1. **Document the current Phase 1 data contract.** Record existing columns, unique Gmail message ID, status/extraction states, JSON fields, and whether each value comes from email or CV extraction. Do not put applicant values in documentation. The data contract is in `Docs/Phase_2_Data_Contract.md`.
-2. **Agree on the target recruitment model.** Decide how a person maps to an applicant, each email to an application, and an application to a job. Keep `public.job_applications` intact during this phase; document future normalization as a reviewed migration.
-3. **Choose and document the access model.** Quarkus connects to Supabase Postgres using a dedicated, least-privilege role and secret environment variables. The table has RLS enabled and currently no policies. A dedicated role requires an explicit role-scoped SELECT policy as well as table grants. Do not use the database owner or privileged service role as the routine application credential.
+2. **Keep the Phase 2 data model bounded.** Use the existing `public.job_applications` table without restructuring it. Design applicant, application, and job relationships with the Phase 3 API contract; any future schema migration must be reviewed separately.
+3. **Choose and document the access model.** Completed: Quarkus uses a dedicated, least-privilege role, environment-provided secrets, required table grants, and a role-scoped RLS SELECT policy. Do not use the database owner or privileged service role as the routine application credential.
 4. **Clean the generated Quarkus project.** Preserve the Java 25 / Quarkus 3.40.1.2 Maven BOM and plugin. Keep the intended Java extensions: REST Jackson, Hibernate ORM with Panache (repository pattern), PostgreSQL JDBC, and SmallRye Health. Remove demo resources/entities and redundant or Kotlin-specific extensions before connecting to Supabase. Keep test libraries test-scoped.
 5. **Configure Supabase safely.** Read `QUARKUS_DATASOURCE_JDBC_URL`, `QUARKUS_DATASOURCE_USERNAME`, and `QUARKUS_DATASOURCE_PASSWORD` from the environment. Use SSL and an appropriate direct or Session Pooler connection for the runtime. Do not use the transaction pooler for Hibernate/JPA.
 6. **Map the existing table without changing it.** Add the minimum read-only model, repository, and service for a count or limited query. Set Hibernate schema management to `none` and disable seed/import scripts before pointing the application at Supabase. Keep n8n as the only intake writer until Phase 4.
@@ -186,27 +186,27 @@ This is the implemented Phase 1 scope, expanded from the original Gmail-only pro
 ### Phase 2 tasks
 
 - [x] Document the current `public.job_applications` schema and field mapping in `Docs/Phase_2_Data_Contract.md`, without applicant values.
-- [ ] Approve the applicant/application/job relationship and list future schema changes.
-- [ ] Review and provision a least-privilege read-only database role and targeted RLS policy. Keep any setup SQL within `Backend/database/`; do not apply it without an explicit database change request.
+- [x] Document the current table and defer applicant/application/job normalization decisions to Phase 3 API design; no live schema changes are needed for this read-only foundation.
+- [x] Provision and verify the least-privilege read-only database role and targeted RLS policy. Reference SQL is kept within `Backend/database/`.
 - [x] Generate the Quarkus Maven project in `Backend` with Java 25 and Quarkus 3.40.1.2.
-- [ ] Clean generated demo code and remove redundant/Kotlin-specific extensions from the Java project.
-- [ ] Configure PostgreSQL connection values through environment variables and use SSL.
-- [ ] Add the existing table mapping and narrow read-only repository/service query.
-- [ ] Disable Hibernate schema changes and all seed/import scripts for the Supabase connection.
-- [ ] Add SmallRye Health endpoints and safe diagnostic logging.
-- [ ] Verify a read-only query against the existing table.
-- [ ] Document local setup and Phase 3 handoff.
+- [x] Clean generated demo code and remove redundant/Kotlin-specific extensions from the Java project.
+- [x] Configure PostgreSQL connection values through environment variables and use SSL.
+- [x] Add the existing table mapping and narrow read-only repository/service query.
+- [x] Disable Hibernate schema changes and all seed/import scripts for the Supabase connection.
+- [x] Add SmallRye Health endpoints and safe diagnostic logging.
+- [x] Verify the read-only Supabase connection and readiness check.
+- [x] Document local setup and Phase 3 handoff.
 
 ### Acceptance criteria
 
-- [ ] Quarkus starts without creating, updating, dropping, or seeding Supabase schema/data.
-- [ ] The backend connects using a dedicated, least-privilege account and a matching RLS policy.
-- [ ] A limited read-only repository query works against the existing table.
-- [ ] Health endpoints work and reveal no credentials or applicant information.
-- [ ] No public route exposes applicant data before authentication and authorization are implemented.
-- [ ] Phase 1 n8n intake continues unchanged and remains the only writer.
+- [x] Quarkus starts without creating, updating, dropping, or seeding Supabase schema/data.
+- [x] The backend connects using a dedicated, least-privilege account and a matching RLS policy.
+- [x] A limited read-only database check succeeds against Supabase.
+- [x] Health endpoints work and reveal no credentials or applicant information.
+- [x] No applicant data endpoint is exposed in Phase 2; authentication/authorization remains required before Phase 3 APIs expose applicant data.
+- [x] Phase 1 n8n intake continues unchanged and remains the only writer.
 
-**Phase 2 deliverable:** A documented Quarkus foundation that securely reads existing Supabase Postgres applications without interrupting Phase 1 intake. The Quarkus starter exists; datasource configuration, restricted role/policy, read-only query, and runtime verification remain pending.
+**Phase 2 deliverable (complete):** A documented Quarkus foundation that securely checks the existing Supabase Postgres connection with a restricted role, avoids schema/data writes, preserves Phase 1 intake, and runs backend-only CI. The next work is Phase 3: design and implement authenticated REST APIs.
 
 Supabase references: [Connecting to Postgres](https://supabase.com/docs/guides/database/connecting-to-postgres), [Postgres roles](https://supabase.com/docs/guides/database/postgres/roles), and [Securing your data](https://supabase.com/docs/guides/database/secure-data). Quarkus references: [Maven tooling](https://quarkus.io/guides/maven-tooling), [Hibernate ORM](https://quarkus.io/guides/hibernate-orm), and [SmallRye Health](https://quarkus.io/guides/smallrye-health).
 
@@ -482,7 +482,7 @@ human-reviewed, job-specific AI assistance.
 |---|---|---|
 | 0 | Project preparation | Repository and development environment ready |
 | 1 | Gmail + n8n + AI + Supabase intake | CV validation, AI extraction, database save, applicant acknowledgment (complete) |
-| 2 | Data contract + Quarkus foundation | Backend securely reads existing Supabase applications |
+| 2 | Data contract + Quarkus foundation | Complete: restricted Supabase connection, health checks, read-only foundation, backend CI |
 | 3 | Core REST APIs | Authenticated applicant, job, and application operations |
 | 4 | n8n + backend integration | n8n sends application data through Quarkus into the same Supabase database |
 | 5 | HR dashboard | HR can review candidates and manage statuses |
@@ -505,4 +505,4 @@ Before marking a phase complete:
 
 ## First task to begin
 
-Continue Phase 2 by cleaning the generated Quarkus starter, reviewing its extensions and package names, and explicitly disabling schema changes and demo SQL scripts. Then provision a dedicated read-only Supabase role and RLS policy, configure the datasource through environment variables, and implement the limited read-only query. Leave the current n8n workflow as the intake writer until the secured ingestion API is ready in Phase 4.
+Begin Phase 3 by defining the authenticated REST API contract and HR access model. Design the applicant, application, and job relationships for API needs, then implement protected endpoints with DTO validation and authorization. Keep the existing n8n workflow as the intake writer until the secured ingestion API is ready in Phase 4.

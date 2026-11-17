@@ -1,2 +1,2 @@
-/** Security policy boundaries. Database grants and RLS rules are documented under Backend/database. */
+/** Supabase JWT authorization roles and authentication boundaries. */
 package org.hr.recruitmen.automation.security;
