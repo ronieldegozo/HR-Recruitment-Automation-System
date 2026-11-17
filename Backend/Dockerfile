@@ -1,12 +1,9 @@
 FROM maven:3.10-eclipse-temurin-25 AS build
 WORKDIR /workspace
 
-COPY .mvn/ .mvn/
-COPY mvnw pom.xml ./
-RUN chmod +x mvnw
-
+COPY pom.xml ./
 COPY src/ src/
-RUN ./mvnw -B -DskipTests package
+RUN mvn -B -DskipTests package
 
 FROM registry.access.redhat.com/ubi9/openjdk-25-runtime:1.24
 
