@@ -1,6 +1,8 @@
 # RecruitFlow Backend — Phase 2 Quarkus foundation
 
-This backend uses the Quarkus Maven project settings in this folder. Phase 2 connects to the existing Supabase Postgres database with a dedicated restricted login and performs read-only queries. n8n remains the only intake writer.
+**Phase status: Complete (2026-11-17).** The restricted Supabase connection and health checks are verified. Backend-only GitHub Actions CI is configured and passing. Phase 3 will add authenticated API capabilities.
+
+This backend uses the Quarkus Maven project settings in this folder. The Phase 2 foundation connects to the existing Supabase Postgres database with a dedicated restricted login and performs read-only queries. n8n remains the only intake writer.
 
 ## Structure
 
@@ -32,7 +34,7 @@ Layer direction: controller -> service -> repository -> model. DTOs are HTTP bou
 
 Verified in the connected Supabase project: `recruitflow_backend_readonly` exists with `LOGIN` and `NOBYPASSRLS`; it has `CONNECT` on `postgres`, `USAGE` on `public`, and `SELECT` on `public.job_applications`. RLS is enabled and the role-specific SELECT policy exists. These checks inspected role and permission metadata only, not applicant records.
 
-The role's password has not been verified or changed. Set/reset it securely through Supabase's database role management UI, and never put it in this repository or chat. The `postgres` owner password previously shared in chat should be rotated in Supabase; update any client credentials that depend on it, including n8n if it uses that password. The backend must use the restricted role, never the `postgres` owner or a service-role key.
+The backend connection and role credentials were verified by the successful readiness check. Keep the role password in a local environment variable or managed secret only; do not put it in this repository. The postgres owner password previously shared in chat should be rotated in Supabase, and any dependent clients should be updated. The backend must use the restricted role, never the postgres owner or a service-role key.
 
 `database/readonly-role.sql` is reference SQL only. The role, grants, and policy are already present; do not run it again as-is because it creates the policy without an existence check.
 
@@ -64,7 +66,7 @@ From the Backend folder:
 .\mvnw.cmd quarkus:dev
 ```
 
-Check liveness at `http://127.0.0.1:8080/q/health/live` and database readiness at `http://127.0.0.1:8080/q/health/ready`. Readiness returns only dependency health, never applicant fields. Stop with Ctrl+C.
+Check liveness at `http://localhost:8080/q/health/live` and database readiness at `http://localhost:8080/q/health/ready`. Readiness returns only dependency health, never applicant fields. Stop with Ctrl+C.
 
 If the role password, SSL, network, or pooler settings are incorrect, readiness will report the database dependency as down. The app cannot read Supabase until those values are valid.
 

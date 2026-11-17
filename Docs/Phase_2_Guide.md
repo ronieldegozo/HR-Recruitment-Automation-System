@@ -2,7 +2,7 @@
 
 **Purpose:** Explain what Phase 2 means, what to build, and what must be true before Phase 3.
 
-**Current status (2026-11-10):** Phase 1 is complete. The `Backend` folder now contains a generated Quarkus Maven project using Java 25 and Quarkus platform 3.40.1.2. The Supabase datasource, read-only data mapping/query, and database role/policy are not yet configured or verified. The generated starter still needs cleanup before it is connected to the existing database.
+**Status (2026-11-17): Complete.** Phase 2 delivered the Quarkus backend foundation, verified its read-only connection to the live Supabase Postgres database with the restricted backend role, added health/readiness checks, and established a backend-only GitHub Actions CI pipeline. CI has passed on `backend_dev` and for pull requests. No applicant REST API, HR authentication, dashboard, deployment, or n8n write handoff is included; those are later-phase work.
 
 ## Phase 2 in one sentence
 
@@ -166,18 +166,19 @@ Record the local run steps, Quarkus version, extension list, environment variabl
 ## Phase 2 completion checklist
 
 - [x] Phase 1 data contract documented in `Docs/Phase_2_Data_Contract.md`.
-- [x] Quarkus Maven project scaffold exists in `Backend` with Java 25 and Quarkus 3.40.1.2.
-- [ ] Generated starter code and redundant/non-Java extensions are cleaned up.
-- [ ] Applicant, application, and job relationships are reviewed and agreed.
-- [ ] A dedicated least-privilege role and role-scoped RLS SELECT policy are provisioned.
-- [ ] Quarkus datasource configuration uses environment variables and SSL.
-- [ ] Hibernate schema generation and seed scripts are explicitly disabled for Supabase.
-- [ ] Read-only model, repository, and service query the existing table.
-- [ ] Quarkus starts and health endpoints work.
-- [ ] A limited read-only query succeeds against Supabase.
-- [ ] Phase 1 n8n intake continues unchanged as the only writer.
-- [ ] Local setup and the Phase 3 handoff are documented.
+- [x] Quarkus Maven project configured in `Backend` with Java 25 and Quarkus 3.40.1.2.
+- [x] Generated demo starter is cleaned up and the backend package structure is documented.
+- [x] Dedicated least-privilege database role and role-scoped RLS SELECT policy are provisioned.
+- [x] Quarkus datasource reads credentials from environment variables and uses SSL.
+- [x] Hibernate schema generation and seed scripts are disabled for Supabase.
+- [x] Read-only model, repository, and service query the existing table.
+- [x] Quarkus starts and health/readiness endpoints work against Supabase.
+- [x] A limited read-only database check succeeds without exposing applicant data.
+- [x] Phase 1 n8n intake remains unchanged as the only applicant intake writer.
+- [x] Local setup, backend rules, and the Phase 3 handoff are documented.
+- [x] Backend GitHub Actions CI is configured; push and pull request checks passed.
 
+**Completion note:** Applicant/application/job normalization and API-specific data contracts remain design work for Phase 3. This does not block completion of the read-only backend foundation.
 ## What Phase 2 does not include
 
 Phase 2 does not build applicant/job/application CRUD APIs, HR login, a dashboard, CV file storage, AI job matching, HR reminders, or the n8n-to-backend write handoff. Those belong to later phases. Do not route n8n through Quarkus until the Phase 3 API is authenticated and Phase 4 integration is ready.
