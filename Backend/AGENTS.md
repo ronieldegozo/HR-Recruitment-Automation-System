@@ -7,3 +7,4 @@
 - Keep the layers separate. Follow `src/main/java/org/hr/recruitmen/automation/AGENTS.md` and the package-level instructions.
 - Database-role and RLS setup SQL belongs in `database/` and is review-only unless the user explicitly asks for a live database change.
 - Do not modify project folders outside `Backend/` for backend implementation work.
+- For every API endpoint change, follow `api/AGENTS.md` and keep the Local and Live Postman request folders synchronized.
