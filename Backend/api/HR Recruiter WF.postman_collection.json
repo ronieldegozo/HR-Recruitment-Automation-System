@@ -1,0 +1,388 @@
+{
+  "variable": [
+    {
+      "type": "string",
+      "value": "http://localhost:8080",
+      "key": "localBaseUrl"
+    },
+    {
+      "type": "string",
+      "value": "https://hr-recruitment-automation-system.onrender.com",
+      "key": "liveBaseUrl"
+    }
+  ],
+  "item": [
+    {
+      "item": [
+        {
+          "name": "Liveness",
+          "response": [],
+          "request": {
+            "header": [],
+            "url": "{{localBaseUrl}}/q/health/live",
+            "method": "GET"
+          }
+        },
+        {
+          "name": "Readiness (includes database)",
+          "response": [],
+          "request": {
+            "header": [],
+            "url": "{{localBaseUrl}}/q/health/ready",
+            "method": "GET"
+          }
+        },
+        {
+          "name": "Login",
+          "response": [],
+          "request": {
+            "header": [
+              {
+                "type": "text",
+                "value": "application/json",
+                "key": "Content-Type"
+              }
+            ],
+            "url": "{{localBaseUrl}}/api/v1/auth/login",
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\"email\":\"{{localAdminEmail}}\",\"password\":\"{{localAdminPassword}}\"}"
+            },
+            "method": "POST"
+          },
+          "event": [
+            {
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) { const body = pm.response.json(); if (body.accessToken) pm.environment.set(\"localAccessToken\", body.accessToken); }"
+                ]
+              },
+              "listen": "test"
+            }
+          ]
+        },
+        {
+          "name": "List Recruiters",
+          "response": [],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "type": "string",
+                  "value": "{{localAccessToken}}",
+                  "key": "token"
+                }
+              ]
+            },
+            "header": [],
+            "url": "{{localBaseUrl}}/api/v1/admin/recruiters",
+            "method": "GET"
+          }
+        },
+        {
+          "name": "Create User",
+          "response": [],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "type": "string",
+                  "value": "{{localAccessToken}}",
+                  "key": "token"
+                }
+              ]
+            },
+            "header": [
+              {
+                "type": "text",
+                "value": "application/json",
+                "key": "Content-Type"
+              }
+            ],
+            "url": "{{localBaseUrl}}/api/v1/admin/users",
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\"email\":\"{{newUserEmail}}\",\"password\":\"{{newUserPassword}}\",\"role\":\"RECRUITER\"}"
+            },
+            "method": "POST"
+          }
+        },
+        {
+          "name": "Change User Role",
+          "response": [],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "type": "string",
+                  "value": "{{localAccessToken}}",
+                  "key": "token"
+                }
+              ]
+            },
+            "header": [
+              {
+                "type": "text",
+                "value": "application/json",
+                "key": "Content-Type"
+              }
+            ],
+            "url": "{{localBaseUrl}}/api/v1/admin/users/{{targetUserId}}/role",
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\"role\":\"{{newRole}}\"}"
+            },
+            "method": "PUT"
+          }
+        },
+        {
+          "name": "Remove User Role",
+          "response": [],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "type": "string",
+                  "value": "{{localAccessToken}}",
+                  "key": "token"
+                }
+              ]
+            },
+            "header": [],
+            "url": "{{localBaseUrl}}/api/v1/admin/users/{{targetUserId}}/role",
+            "method": "DELETE"
+          }
+        },
+        {
+          "name": "Delete User (permanent)",
+          "response": [],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "type": "string",
+                  "value": "{{localAccessToken}}",
+                  "key": "token"
+                }
+              ]
+            },
+            "header": [],
+            "url": "{{localBaseUrl}}/api/v1/admin/users/{{targetUserId}}",
+            "method": "DELETE"
+          }
+        }
+      ],
+      "name": "Local"
+    },
+    {
+      "item": [
+        {
+          "name": "Liveness",
+          "response": [],
+          "request": {
+            "header": [],
+            "url": "{{liveBaseUrl}}/q/health/live",
+            "method": "GET"
+          }
+        },
+        {
+          "name": "Readiness (includes database)",
+          "response": [],
+          "request": {
+            "header": [],
+            "url": "{{liveBaseUrl}}/q/health/ready",
+            "method": "GET"
+          }
+        },
+        {
+          "name": "Login",
+          "response": [],
+          "request": {
+            "header": [
+              {
+                "type": "text",
+                "value": "application/json",
+                "key": "Content-Type"
+              }
+            ],
+            "url": "{{liveBaseUrl}}/api/v1/auth/login",
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\"email\":\"{{liveAdminEmail}}\",\"password\":\"{{liveAdminPassword}}\"}"
+            },
+            "method": "POST"
+          },
+          "event": [
+            {
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) { const body = pm.response.json(); if (body.accessToken) pm.environment.set(\"liveAccessToken\", body.accessToken); }"
+                ]
+              },
+              "listen": "test"
+            }
+          ]
+        },
+        {
+          "name": "List Recruiters",
+          "response": [],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "type": "string",
+                  "value": "{{liveAccessToken}}",
+                  "key": "token"
+                }
+              ]
+            },
+            "header": [],
+            "url": "{{liveBaseUrl}}/api/v1/admin/recruiters",
+            "method": "GET"
+          }
+        },
+        {
+          "name": "Create User",
+          "response": [],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "type": "string",
+                  "value": "{{liveAccessToken}}",
+                  "key": "token"
+                }
+              ]
+            },
+            "header": [
+              {
+                "type": "text",
+                "value": "application/json",
+                "key": "Content-Type"
+              }
+            ],
+            "url": "{{liveBaseUrl}}/api/v1/admin/users",
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\"email\":\"{{newUserEmail}}\",\"password\":\"{{newUserPassword}}\",\"role\":\"RECRUITER\"}"
+            },
+            "method": "POST"
+          }
+        },
+        {
+          "name": "Change User Role",
+          "response": [],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "type": "string",
+                  "value": "{{liveAccessToken}}",
+                  "key": "token"
+                }
+              ]
+            },
+            "header": [
+              {
+                "type": "text",
+                "value": "application/json",
+                "key": "Content-Type"
+              }
+            ],
+            "url": "{{liveBaseUrl}}/api/v1/admin/users/{{targetUserId}}/role",
+            "body": {
+              "mode": "raw",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              },
+              "raw": "{\"role\":\"{{newRole}}\"}"
+            },
+            "method": "PUT"
+          }
+        },
+        {
+          "name": "Remove User Role",
+          "response": [],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "type": "string",
+                  "value": "{{liveAccessToken}}",
+                  "key": "token"
+                }
+              ]
+            },
+            "header": [],
+            "url": "{{liveBaseUrl}}/api/v1/admin/users/{{targetUserId}}/role",
+            "method": "DELETE"
+          }
+        },
+        {
+          "name": "Delete User (permanent)",
+          "response": [],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "type": "string",
+                  "value": "{{liveAccessToken}}",
+                  "key": "token"
+                }
+              ]
+            },
+            "header": [],
+            "url": "{{liveBaseUrl}}/api/v1/admin/users/{{targetUserId}}",
+            "method": "DELETE"
+          }
+        }
+      ],
+      "name": "Live"
+    }
+  ],
+  "info": {
+    "name": "HR Recruiter WF",
+    "_postman_id": "7d7a75b1-5fec-44ba-b3ae-bb2938ee9cd4",
+    "description": "API requests are grouped by Local and Live. Select the matching Postman environment before sending requests.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  }
+}
