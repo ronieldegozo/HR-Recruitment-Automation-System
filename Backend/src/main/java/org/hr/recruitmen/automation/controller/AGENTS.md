@@ -1,6 +1,6 @@
 # Controller/resource rules
 
 - Quarkus Jakarta REST resources belong here; delegate work to services.
-- Do not expose applicant data or CRUD endpoints during Phase 2.
-- Do not return JPA entities; use explicit response DTOs in a later secured API phase.
-- Keep the HTTP server bound to localhost until authentication and authorization are implemented.
+- Auth login is public; account and role administration must use SUPER_ADMIN authorization. Do not expose applicant endpoints before their own security design is implemented.
+- Never return JPA entities; use explicit response DTOs.
+- Keep the HTTP server bound to localhost during development; never rely on UI hiding for authorization.
