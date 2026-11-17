@@ -4,15 +4,12 @@ on:
   push:
     branches:
       - backend_dev
-    paths:
-      - 'Backend/**'
-      - '.github/workflows/backend-ci.yml'
+      - master
+      - main
   pull_request:
     branches:
       - master
-    paths:
-      - 'Backend/**'
-      - '.github/workflows/backend-ci.yml'
+      - main
   workflow_dispatch:
 
 permissions:
@@ -23,10 +20,10 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-and-test:
-    name: Build and test backend
+  backend-ci:
+    name: Backend CI (Maven + Docker)
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     defaults:
       run:
         working-directory: Backend
@@ -46,3 +43,6 @@ jobs:
 
       - name: Build and run tests
         run: bash ./mvnw --batch-mode --no-transfer-progress verify
+
+      - name: Build production Docker image
+        run: docker build --pull --tag recruitflow-backend:${{ github.sha }} .
