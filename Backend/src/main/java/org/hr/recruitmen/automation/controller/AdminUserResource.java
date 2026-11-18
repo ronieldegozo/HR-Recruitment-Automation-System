@@ -8,6 +8,7 @@ import org.hr.recruitmen.automation.dto.UserResponseDTO;
 import org.hr.recruitmen.automation.security.AppRole;
 import org.hr.recruitmen.automation.security.AuthApiException;
 import org.hr.recruitmen.automation.service.SupabaseAuthService;
+import org.hr.recruitmen.automation.organization.service.OrganizationAccountGuardService;
 
 import org.eclipse.microprofile.jwt.JsonWebToken;
 import jakarta.annotation.security.RolesAllowed;
@@ -34,6 +35,9 @@ public class AdminUserResource {
     @Inject
     JsonWebToken token;
 
+    @Inject
+    OrganizationAccountGuardService organizationAccountGuard;
+
     @POST
     public Response createUser(@Valid CreateUserRequest request) {
         return Response.status(Response.Status.CREATED).entity(authService.createUser(request)).build();
@@ -45,6 +49,7 @@ public class AdminUserResource {
         if (isSelf(userId) && request.role() != AppRole.SUPER_ADMIN) {
             throw new AuthApiException(409, "You cannot remove your own Super Admin role.");
         }
+        organizationAccountGuard.requireUnassignedBeforeRoleChangeOrDelete(userId);
         return authService.updateRole(userId, request.role());
     }
 
@@ -54,6 +59,7 @@ public class AdminUserResource {
         if (isSelf(userId)) {
             throw new AuthApiException(409, "You cannot remove your own Super Admin role.");
         }
+        organizationAccountGuard.requireUnassignedBeforeRoleChangeOrDelete(userId);
         return authService.removeRole(userId);
     }
 
@@ -63,6 +69,7 @@ public class AdminUserResource {
         if (isSelf(userId)) {
             throw new AuthApiException(409, "You cannot delete your own Super Admin account.");
         }
+        organizationAccountGuard.requireUnassignedBeforeRoleChangeOrDelete(userId);
         authService.deleteUser(userId);
         return Response.noContent().build();
     }

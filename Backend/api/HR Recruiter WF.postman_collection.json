@@ -191,6 +191,577 @@
             "url": "{{localBaseUrl}}/api/v1/admin/users/{{targetUserId}}",
             "method": "DELETE"
           }
+        },
+        {
+          "item": [
+            {
+              "name": "Login Manager",
+              "request": {
+                "body": {
+                  "mode": "raw",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  },
+                  "raw": "{\"email\":\"{{localManagerEmail}}\",\"password\":\"{{localManagerPassword}}\"}"
+                },
+                "header": [
+                  {
+                    "type": "text",
+                    "value": "application/json",
+                    "key": "Content-Type"
+                  }
+                ],
+                "method": "POST",
+                "url": "{{localBaseUrl}}/api/v1/auth/login"
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (pm.response.code >= 200 && pm.response.code < 300) { const body = pm.response.json(); if (body.accessToken) pm.environment.set(\"localManagerAccessToken\", body.accessToken); }"
+                    ]
+                  }
+                }
+              ],
+              "response": []
+            },
+            {
+              "name": "Login Team Lead",
+              "request": {
+                "body": {
+                  "mode": "raw",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  },
+                  "raw": "{\"email\":\"{{localTeamLeadEmail}}\",\"password\":\"{{localTeamLeadPassword}}\"}"
+                },
+                "header": [
+                  {
+                    "type": "text",
+                    "value": "application/json",
+                    "key": "Content-Type"
+                  }
+                ],
+                "method": "POST",
+                "url": "{{localBaseUrl}}/api/v1/auth/login"
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (pm.response.code >= 200 && pm.response.code < 300) { const body = pm.response.json(); if (body.accessToken) pm.environment.set(\"localTeamLeadAccessToken\", body.accessToken); }"
+                    ]
+                  }
+                }
+              ],
+              "response": []
+            },
+            {
+              "name": "Login Recruiter",
+              "request": {
+                "body": {
+                  "mode": "raw",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  },
+                  "raw": "{\"email\":\"{{localRecruiterEmail}}\",\"password\":\"{{localRecruiterPassword}}\"}"
+                },
+                "header": [
+                  {
+                    "type": "text",
+                    "value": "application/json",
+                    "key": "Content-Type"
+                  }
+                ],
+                "method": "POST",
+                "url": "{{localBaseUrl}}/api/v1/auth/login"
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (pm.response.code >= 200 && pm.response.code < 300) { const body = pm.response.json(); if (body.accessToken) pm.environment.set(\"localRecruiterAccessToken\", body.accessToken); }"
+                    ]
+                  }
+                }
+              ],
+              "response": []
+            },
+            {
+              "name": "List My Stores",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "type": "string",
+                      "value": "{{localManagerAccessToken}}",
+                      "key": "token"
+                    }
+                  ]
+                },
+                "header": [],
+                "method": "GET",
+                "url": "{{localBaseUrl}}/api/v1/manager/stores"
+              },
+              "response": []
+            },
+            {
+              "name": "Create Store",
+              "request": {
+                "body": {
+                  "mode": "raw",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  },
+                  "raw": "{\"storeCode\":\"{{storeCode}}\",\"name\":\"{{storeName}}\",\"location\":\"{{storeLocation}}\"}"
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "type": "string",
+                      "value": "{{localManagerAccessToken}}",
+                      "key": "token"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "type": "text",
+                    "value": "application/json",
+                    "key": "Content-Type"
+                  }
+                ],
+                "method": "POST",
+                "url": "{{localBaseUrl}}/api/v1/manager/stores"
+              },
+              "response": []
+            },
+            {
+              "name": "Get Store",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "type": "string",
+                      "value": "{{localManagerAccessToken}}",
+                      "key": "token"
+                    }
+                  ]
+                },
+                "header": [],
+                "method": "GET",
+                "url": "{{localBaseUrl}}/api/v1/manager/stores/{{targetStoreId}}"
+              },
+              "response": []
+            },
+            {
+              "name": "Update Store",
+              "request": {
+                "body": {
+                  "mode": "raw",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  },
+                  "raw": "{\"name\":\"{{storeName}}\",\"location\":\"{{storeLocation}}\"}"
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "type": "string",
+                      "value": "{{localManagerAccessToken}}",
+                      "key": "token"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "type": "text",
+                    "value": "application/json",
+                    "key": "Content-Type"
+                  }
+                ],
+                "method": "PUT",
+                "url": "{{localBaseUrl}}/api/v1/manager/stores/{{targetStoreId}}"
+              },
+              "response": []
+            },
+            {
+              "name": "Archive Store",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "type": "string",
+                      "value": "{{localManagerAccessToken}}",
+                      "key": "token"
+                    }
+                  ]
+                },
+                "header": [],
+                "method": "DELETE",
+                "url": "{{localBaseUrl}}/api/v1/manager/stores/{{targetStoreId}}"
+              },
+              "response": []
+            },
+            {
+              "name": "List Available Team Leads",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "type": "string",
+                      "value": "{{localManagerAccessToken}}",
+                      "key": "token"
+                    }
+                  ]
+                },
+                "header": [],
+                "method": "GET",
+                "url": "{{localBaseUrl}}/api/v1/manager/available-team-leads"
+              },
+              "response": []
+            },
+            {
+              "name": "List Available Recruiters",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "type": "string",
+                      "value": "{{localManagerAccessToken}}",
+                      "key": "token"
+                    }
+                  ]
+                },
+                "header": [],
+                "method": "GET",
+                "url": "{{localBaseUrl}}/api/v1/manager/available-recruiters"
+              },
+              "response": []
+            },
+            {
+              "name": "List Store Team Leads",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "type": "string",
+                      "value": "{{localManagerAccessToken}}",
+                      "key": "token"
+                    }
+                  ]
+                },
+                "header": [],
+                "method": "GET",
+                "url": "{{localBaseUrl}}/api/v1/manager/stores/{{targetStoreId}}/team-leads"
+              },
+              "response": []
+            },
+            {
+              "name": "Assign Team Lead to Store",
+              "request": {
+                "body": {
+                  "mode": "raw",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  },
+                  "raw": "{\"userId\":\"{{teamLeadUserId}}\"}"
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "type": "string",
+                      "value": "{{localManagerAccessToken}}",
+                      "key": "token"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "type": "text",
+                    "value": "application/json",
+                    "key": "Content-Type"
+                  }
+                ],
+                "method": "POST",
+                "url": "{{localBaseUrl}}/api/v1/manager/stores/{{targetStoreId}}/team-leads"
+              },
+              "response": []
+            },
+            {
+              "name": "Unassign Team Lead from Store",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "type": "string",
+                      "value": "{{localManagerAccessToken}}",
+                      "key": "token"
+                    }
+                  ]
+                },
+                "header": [],
+                "method": "DELETE",
+                "url": "{{localBaseUrl}}/api/v1/manager/stores/{{targetStoreId}}/team-leads/{{teamLeadUserId}}"
+              },
+              "response": []
+            },
+            {
+              "name": "List Team Lead Recruiters",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "type": "string",
+                      "value": "{{localManagerAccessToken}}",
+                      "key": "token"
+                    }
+                  ]
+                },
+                "header": [],
+                "method": "GET",
+                "url": "{{localBaseUrl}}/api/v1/manager/stores/{{targetStoreId}}/team-leads/{{teamLeadUserId}}/recruiters"
+              },
+              "response": []
+            },
+            {
+              "name": "Assign Recruiter to Team Lead",
+              "request": {
+                "body": {
+                  "mode": "raw",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  },
+                  "raw": "{\"userId\":\"{{recruiterUserId}}\"}"
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "type": "string",
+                      "value": "{{localManagerAccessToken}}",
+                      "key": "token"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "type": "text",
+                    "value": "application/json",
+                    "key": "Content-Type"
+                  }
+                ],
+                "method": "POST",
+                "url": "{{localBaseUrl}}/api/v1/manager/stores/{{targetStoreId}}/team-leads/{{teamLeadUserId}}/recruiters"
+              },
+              "response": []
+            },
+            {
+              "name": "Unassign Recruiter from Team Lead",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "type": "string",
+                      "value": "{{localManagerAccessToken}}",
+                      "key": "token"
+                    }
+                  ]
+                },
+                "header": [],
+                "method": "DELETE",
+                "url": "{{localBaseUrl}}/api/v1/manager/stores/{{targetStoreId}}/team-leads/{{teamLeadUserId}}/recruiters/{{recruiterUserId}}"
+              },
+              "response": []
+            },
+            {
+              "name": "List My Assigned Stores",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "type": "string",
+                      "value": "{{localTeamLeadAccessToken}}",
+                      "key": "token"
+                    }
+                  ]
+                },
+                "header": [],
+                "method": "GET",
+                "url": "{{localBaseUrl}}/api/v1/team-lead/stores"
+              },
+              "response": []
+            },
+            {
+              "name": "List My Recruiters",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "type": "string",
+                      "value": "{{localTeamLeadAccessToken}}",
+                      "key": "token"
+                    }
+                  ]
+                },
+                "header": [],
+                "method": "GET",
+                "url": "{{localBaseUrl}}/api/v1/team-lead/recruiters"
+              },
+              "response": []
+            },
+            {
+              "name": "View Recruiter Progress",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "type": "string",
+                      "value": "{{localTeamLeadAccessToken}}",
+                      "key": "token"
+                    }
+                  ]
+                },
+                "header": [],
+                "method": "GET",
+                "url": "{{localBaseUrl}}/api/v1/team-lead/recruiters/{{recruiterUserId}}/progress"
+              },
+              "response": []
+            },
+            {
+              "name": "List My Progress Reports",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "type": "string",
+                      "value": "{{localRecruiterAccessToken}}",
+                      "key": "token"
+                    }
+                  ]
+                },
+                "header": [],
+                "method": "GET",
+                "url": "{{localBaseUrl}}/api/v1/recruiter/progress"
+              },
+              "response": []
+            },
+            {
+              "name": "Submit or Update Progress Report",
+              "request": {
+                "body": {
+                  "mode": "raw",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  },
+                  "raw": "{\"periodEnd\":\"{{progressPeriodEnd}}\",\"candidatesReviewed\":{{candidatesReviewed}},\"candidatesContacted\":{{candidatesContacted}},\"interviewsScheduled\":{{interviewsScheduled}},\"notes\":\"{{progressNotes}}\"}"
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "type": "string",
+                      "value": "{{localRecruiterAccessToken}}",
+                      "key": "token"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "type": "text",
+                    "value": "application/json",
+                    "key": "Content-Type"
+                  }
+                ],
+                "method": "PUT",
+                "url": "{{localBaseUrl}}/api/v1/recruiter/progress/{{progressPeriodStart}}"
+              },
+              "response": []
+            },
+            {
+              "name": "List Available Managers",
+              "response": [],
+              "request": {
+                "header": [
+                  {
+                    "value": "Bearer {{localManagerAccessToken}}",
+                    "type": "text",
+                    "key": "Authorization"
+                  }
+                ],
+                "method": "GET",
+                "url": "{{localBaseUrl}}/api/v1/manager/available-managers"
+              }
+            },
+            {
+              "name": "Transfer Store to Another Manager",
+              "response": [],
+              "request": {
+                "header": [
+                  {
+                    "value": "Bearer {{localManagerAccessToken}}",
+                    "type": "text",
+                    "key": "Authorization"
+                  },
+                  {
+                    "value": "application/json",
+                    "type": "text",
+                    "key": "Content-Type"
+                  }
+                ],
+                "method": "PUT",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"userId\":\"{{targetManagerUserId}}\"}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{localBaseUrl}}/api/v1/manager/stores/{{targetStoreId}}/manager"
+              }
+            }
+          ],
+          "name": "Phase 2.A - Store & Team Management"
         }
       ],
       "name": "Local"
@@ -374,6 +945,577 @@
             "url": "{{liveBaseUrl}}/api/v1/admin/users/{{targetUserId}}",
             "method": "DELETE"
           }
+        },
+        {
+          "item": [
+            {
+              "name": "Login Manager",
+              "request": {
+                "body": {
+                  "mode": "raw",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  },
+                  "raw": "{\"email\":\"{{liveManagerEmail}}\",\"password\":\"{{liveManagerPassword}}\"}"
+                },
+                "header": [
+                  {
+                    "type": "text",
+                    "value": "application/json",
+                    "key": "Content-Type"
+                  }
+                ],
+                "method": "POST",
+                "url": "{{liveBaseUrl}}/api/v1/auth/login"
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (pm.response.code >= 200 && pm.response.code < 300) { const body = pm.response.json(); if (body.accessToken) pm.environment.set(\"liveManagerAccessToken\", body.accessToken); }"
+                    ]
+                  }
+                }
+              ],
+              "response": []
+            },
+            {
+              "name": "Login Team Lead",
+              "request": {
+                "body": {
+                  "mode": "raw",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  },
+                  "raw": "{\"email\":\"{{liveTeamLeadEmail}}\",\"password\":\"{{liveTeamLeadPassword}}\"}"
+                },
+                "header": [
+                  {
+                    "type": "text",
+                    "value": "application/json",
+                    "key": "Content-Type"
+                  }
+                ],
+                "method": "POST",
+                "url": "{{liveBaseUrl}}/api/v1/auth/login"
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (pm.response.code >= 200 && pm.response.code < 300) { const body = pm.response.json(); if (body.accessToken) pm.environment.set(\"liveTeamLeadAccessToken\", body.accessToken); }"
+                    ]
+                  }
+                }
+              ],
+              "response": []
+            },
+            {
+              "name": "Login Recruiter",
+              "request": {
+                "body": {
+                  "mode": "raw",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  },
+                  "raw": "{\"email\":\"{{liveRecruiterEmail}}\",\"password\":\"{{liveRecruiterPassword}}\"}"
+                },
+                "header": [
+                  {
+                    "type": "text",
+                    "value": "application/json",
+                    "key": "Content-Type"
+                  }
+                ],
+                "method": "POST",
+                "url": "{{liveBaseUrl}}/api/v1/auth/login"
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "if (pm.response.code >= 200 && pm.response.code < 300) { const body = pm.response.json(); if (body.accessToken) pm.environment.set(\"liveRecruiterAccessToken\", body.accessToken); }"
+                    ]
+                  }
+                }
+              ],
+              "response": []
+            },
+            {
+              "name": "List My Stores",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "type": "string",
+                      "value": "{{liveManagerAccessToken}}",
+                      "key": "token"
+                    }
+                  ]
+                },
+                "header": [],
+                "method": "GET",
+                "url": "{{liveBaseUrl}}/api/v1/manager/stores"
+              },
+              "response": []
+            },
+            {
+              "name": "Create Store",
+              "request": {
+                "body": {
+                  "mode": "raw",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  },
+                  "raw": "{\"storeCode\":\"{{storeCode}}\",\"name\":\"{{storeName}}\",\"location\":\"{{storeLocation}}\"}"
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "type": "string",
+                      "value": "{{liveManagerAccessToken}}",
+                      "key": "token"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "type": "text",
+                    "value": "application/json",
+                    "key": "Content-Type"
+                  }
+                ],
+                "method": "POST",
+                "url": "{{liveBaseUrl}}/api/v1/manager/stores"
+              },
+              "response": []
+            },
+            {
+              "name": "Get Store",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "type": "string",
+                      "value": "{{liveManagerAccessToken}}",
+                      "key": "token"
+                    }
+                  ]
+                },
+                "header": [],
+                "method": "GET",
+                "url": "{{liveBaseUrl}}/api/v1/manager/stores/{{targetStoreId}}"
+              },
+              "response": []
+            },
+            {
+              "name": "Update Store",
+              "request": {
+                "body": {
+                  "mode": "raw",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  },
+                  "raw": "{\"name\":\"{{storeName}}\",\"location\":\"{{storeLocation}}\"}"
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "type": "string",
+                      "value": "{{liveManagerAccessToken}}",
+                      "key": "token"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "type": "text",
+                    "value": "application/json",
+                    "key": "Content-Type"
+                  }
+                ],
+                "method": "PUT",
+                "url": "{{liveBaseUrl}}/api/v1/manager/stores/{{targetStoreId}}"
+              },
+              "response": []
+            },
+            {
+              "name": "Archive Store",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "type": "string",
+                      "value": "{{liveManagerAccessToken}}",
+                      "key": "token"
+                    }
+                  ]
+                },
+                "header": [],
+                "method": "DELETE",
+                "url": "{{liveBaseUrl}}/api/v1/manager/stores/{{targetStoreId}}"
+              },
+              "response": []
+            },
+            {
+              "name": "List Available Team Leads",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "type": "string",
+                      "value": "{{liveManagerAccessToken}}",
+                      "key": "token"
+                    }
+                  ]
+                },
+                "header": [],
+                "method": "GET",
+                "url": "{{liveBaseUrl}}/api/v1/manager/available-team-leads"
+              },
+              "response": []
+            },
+            {
+              "name": "List Available Recruiters",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "type": "string",
+                      "value": "{{liveManagerAccessToken}}",
+                      "key": "token"
+                    }
+                  ]
+                },
+                "header": [],
+                "method": "GET",
+                "url": "{{liveBaseUrl}}/api/v1/manager/available-recruiters"
+              },
+              "response": []
+            },
+            {
+              "name": "List Store Team Leads",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "type": "string",
+                      "value": "{{liveManagerAccessToken}}",
+                      "key": "token"
+                    }
+                  ]
+                },
+                "header": [],
+                "method": "GET",
+                "url": "{{liveBaseUrl}}/api/v1/manager/stores/{{targetStoreId}}/team-leads"
+              },
+              "response": []
+            },
+            {
+              "name": "Assign Team Lead to Store",
+              "request": {
+                "body": {
+                  "mode": "raw",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  },
+                  "raw": "{\"userId\":\"{{teamLeadUserId}}\"}"
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "type": "string",
+                      "value": "{{liveManagerAccessToken}}",
+                      "key": "token"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "type": "text",
+                    "value": "application/json",
+                    "key": "Content-Type"
+                  }
+                ],
+                "method": "POST",
+                "url": "{{liveBaseUrl}}/api/v1/manager/stores/{{targetStoreId}}/team-leads"
+              },
+              "response": []
+            },
+            {
+              "name": "Unassign Team Lead from Store",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "type": "string",
+                      "value": "{{liveManagerAccessToken}}",
+                      "key": "token"
+                    }
+                  ]
+                },
+                "header": [],
+                "method": "DELETE",
+                "url": "{{liveBaseUrl}}/api/v1/manager/stores/{{targetStoreId}}/team-leads/{{teamLeadUserId}}"
+              },
+              "response": []
+            },
+            {
+              "name": "List Team Lead Recruiters",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "type": "string",
+                      "value": "{{liveManagerAccessToken}}",
+                      "key": "token"
+                    }
+                  ]
+                },
+                "header": [],
+                "method": "GET",
+                "url": "{{liveBaseUrl}}/api/v1/manager/stores/{{targetStoreId}}/team-leads/{{teamLeadUserId}}/recruiters"
+              },
+              "response": []
+            },
+            {
+              "name": "Assign Recruiter to Team Lead",
+              "request": {
+                "body": {
+                  "mode": "raw",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  },
+                  "raw": "{\"userId\":\"{{recruiterUserId}}\"}"
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "type": "string",
+                      "value": "{{liveManagerAccessToken}}",
+                      "key": "token"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "type": "text",
+                    "value": "application/json",
+                    "key": "Content-Type"
+                  }
+                ],
+                "method": "POST",
+                "url": "{{liveBaseUrl}}/api/v1/manager/stores/{{targetStoreId}}/team-leads/{{teamLeadUserId}}/recruiters"
+              },
+              "response": []
+            },
+            {
+              "name": "Unassign Recruiter from Team Lead",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "type": "string",
+                      "value": "{{liveManagerAccessToken}}",
+                      "key": "token"
+                    }
+                  ]
+                },
+                "header": [],
+                "method": "DELETE",
+                "url": "{{liveBaseUrl}}/api/v1/manager/stores/{{targetStoreId}}/team-leads/{{teamLeadUserId}}/recruiters/{{recruiterUserId}}"
+              },
+              "response": []
+            },
+            {
+              "name": "List My Assigned Stores",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "type": "string",
+                      "value": "{{liveTeamLeadAccessToken}}",
+                      "key": "token"
+                    }
+                  ]
+                },
+                "header": [],
+                "method": "GET",
+                "url": "{{liveBaseUrl}}/api/v1/team-lead/stores"
+              },
+              "response": []
+            },
+            {
+              "name": "List My Recruiters",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "type": "string",
+                      "value": "{{liveTeamLeadAccessToken}}",
+                      "key": "token"
+                    }
+                  ]
+                },
+                "header": [],
+                "method": "GET",
+                "url": "{{liveBaseUrl}}/api/v1/team-lead/recruiters"
+              },
+              "response": []
+            },
+            {
+              "name": "View Recruiter Progress",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "type": "string",
+                      "value": "{{liveTeamLeadAccessToken}}",
+                      "key": "token"
+                    }
+                  ]
+                },
+                "header": [],
+                "method": "GET",
+                "url": "{{liveBaseUrl}}/api/v1/team-lead/recruiters/{{recruiterUserId}}/progress"
+              },
+              "response": []
+            },
+            {
+              "name": "List My Progress Reports",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "type": "string",
+                      "value": "{{liveRecruiterAccessToken}}",
+                      "key": "token"
+                    }
+                  ]
+                },
+                "header": [],
+                "method": "GET",
+                "url": "{{liveBaseUrl}}/api/v1/recruiter/progress"
+              },
+              "response": []
+            },
+            {
+              "name": "Submit or Update Progress Report",
+              "request": {
+                "body": {
+                  "mode": "raw",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  },
+                  "raw": "{\"periodEnd\":\"{{progressPeriodEnd}}\",\"candidatesReviewed\":{{candidatesReviewed}},\"candidatesContacted\":{{candidatesContacted}},\"interviewsScheduled\":{{interviewsScheduled}},\"notes\":\"{{progressNotes}}\"}"
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "type": "string",
+                      "value": "{{liveRecruiterAccessToken}}",
+                      "key": "token"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "type": "text",
+                    "value": "application/json",
+                    "key": "Content-Type"
+                  }
+                ],
+                "method": "PUT",
+                "url": "{{liveBaseUrl}}/api/v1/recruiter/progress/{{progressPeriodStart}}"
+              },
+              "response": []
+            },
+            {
+              "name": "List Available Managers",
+              "response": [],
+              "request": {
+                "header": [
+                  {
+                    "value": "Bearer {{liveManagerAccessToken}}",
+                    "type": "text",
+                    "key": "Authorization"
+                  }
+                ],
+                "method": "GET",
+                "url": "{{liveBaseUrl}}/api/v1/manager/available-managers"
+              }
+            },
+            {
+              "name": "Transfer Store to Another Manager",
+              "response": [],
+              "request": {
+                "header": [
+                  {
+                    "value": "Bearer {{liveManagerAccessToken}}",
+                    "type": "text",
+                    "key": "Authorization"
+                  },
+                  {
+                    "value": "application/json",
+                    "type": "text",
+                    "key": "Content-Type"
+                  }
+                ],
+                "method": "PUT",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"userId\":\"{{targetManagerUserId}}\"}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{liveBaseUrl}}/api/v1/manager/stores/{{targetStoreId}}/manager"
+              }
+            }
+          ],
+          "name": "Phase 2.A - Store & Team Management"
         }
       ],
       "name": "Live"

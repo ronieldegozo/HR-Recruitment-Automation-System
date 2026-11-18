@@ -8,3 +8,6 @@
 
 - The initial Super Admin is bootstrapped once through the local helper; never add a public self-promotion or open-registration endpoint.
 - Keep the Auth Admin secret key only on the backend. Do not use the read-only Postgres password for Auth administration.
+
+- Phase 2.A may add `MANAGER` and `TEAM_LEAD` to trusted `app_metadata.role`; managers assign only existing accounts whose roles are verified by the server-side Auth Admin API.
+- Keep organization access in a separate named database login with no `BYPASSRLS`, no ownership, and grants limited to the private organization schema. Do not widen the applicant read-only role.

@@ -57,9 +57,13 @@ public class SupabaseAuthService {
     }
 
     public List<UserResponseDTO> listRecruiters() {
+        return listUsersByRole(AppRole.RECRUITER);
+    }
+
+    public List<UserResponseDTO> listUsersByRole(AppRole expectedRole) {
         ensureAdminApiConfigured();
         try {
-            List<UserResponseDTO> recruiters = new ArrayList<>();
+            List<UserResponseDTO> matchingUsers = new ArrayList<>();
             int page = 1;
             int perPage = 100;
             while (true) {
@@ -70,23 +74,44 @@ public class SupabaseAuthService {
                     String role = user.appMetadata() == null
                             ? null
                             : (String) user.appMetadata().get("role");
-                    if (AppRole.RECRUITER == parseRole(role)) {
-                        recruiters.add(toResponse(user));
+                    if (expectedRole == parseRole(role)) {
+                        matchingUsers.add(toResponse(user));
                     }
                 }
                 if (users.size() < perPage) {
-                    return List.copyOf(recruiters);
+                    return List.copyOf(matchingUsers);
                 }
                 page++;
             }
         } catch (WebApplicationException e) {
-            throw mapAdminException(e, "Supabase Auth could not list recruiters.");
+            throw mapAdminException(e, "Supabase Auth could not list users.");
         } catch (AuthApiException e) {
             throw e;
         } catch (RuntimeException e) {
             throw new AuthApiException(502, "Supabase Auth is temporarily unavailable.");
         }
     }
+
+    public UserResponseDTO requireUserRole(UUID userId, AppRole expectedRole) {
+        ensureAdminApiConfigured();
+        try {
+            SupabaseAuthUser user = authClient.getUser(secretKey, bearerSecret(), userId.toString());
+            AppRole actualRole = user.appMetadata() == null
+                    ? null
+                    : parseRole((String) user.appMetadata().get("role"));
+            if (actualRole != expectedRole) {
+                throw new AuthApiException(409, "The selected account does not have the required role.");
+            }
+            return toResponse(user);
+        } catch (WebApplicationException e) {
+            throw mapAdminException(e, "Supabase Auth could not verify the selected user.");
+        } catch (AuthApiException e) {
+            throw e;
+        } catch (RuntimeException e) {
+            throw new AuthApiException(502, "Supabase Auth is temporarily unavailable.");
+        }
+    }
+
     public UserResponseDTO createUser(CreateUserRequest request) {
         ensureAdminApiConfigured();
         try {
