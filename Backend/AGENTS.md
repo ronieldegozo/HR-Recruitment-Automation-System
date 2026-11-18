@@ -8,3 +8,7 @@
 - Database-role and RLS setup SQL belongs in `database/` and is review-only unless the user explicitly asks for a live database change.
 - Do not modify project folders outside `Backend/` for backend implementation work.
 - For every API endpoint change, follow `api/AGENTS.md` and keep the Local and Live Postman request folders synchronized.
+- Maintain `API_REFERENCE.md` as the Backend's UI-facing API catalog. Add new endpoints and update changed paths, payloads, roles, descriptions, and constraints in the same change as the API; keep its sample calls and the Local/Live Postman folders aligned. Use fictional examples only and never put credentials or tokens in the catalog.
+
+- Phase 2.A organization APIs live only under `src/main/java/org/hr/recruitmen/automation/organization/` and use the opt-in named organization datasource. Keep the default datasource read-only for `public.job_applications`.
+- Phase 2.A schema SQL is reference-only until the user explicitly approves a live database change. Never apply it automatically.

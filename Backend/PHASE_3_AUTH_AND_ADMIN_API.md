@@ -12,7 +12,7 @@
 2. **Bearer token validation and role authorization**
    - Quarkus validates Supabase-issued JWT access tokens using the project's OIDC/JWKS configuration.
    - Authorization roles come from trusted `app_metadata.role`, not user-editable metadata.
-   - Supported application roles are `SUPER_ADMIN` and `RECRUITER`.
+   - The initial Auth foundation supported `SUPER_ADMIN` and `RECRUITER`; Phase 2.A adds `MANAGER` and `TEAM_LEAD` as trusted app roles. See [`PHASE_2A_STORE_AND_TEAM_MANAGEMENT.md`](PHASE_2A_STORE_AND_TEAM_MANAGEMENT.md).
    - Admin routes require a valid token with the `SUPER_ADMIN` role.
 
 3. **Super Admin-only user management**

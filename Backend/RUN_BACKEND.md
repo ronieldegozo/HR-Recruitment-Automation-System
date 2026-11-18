@@ -1,6 +1,6 @@
 # Run the backend locally
 
-This guide starts the Quarkus backend from PowerShell, checks its Supabase Postgres connection, and exercises the Phase 3 authentication and admin APIs. All secrets are entered into the current PowerShell process at runtime; do not save them in this file, `application.properties`, Postman exports, or Git.
+This guide starts the Quarkus backend from PowerShell, checks Supabase Postgres connections, and exercises the Auth/admin and Phase 2.A organization APIs. All secrets are entered into the current PowerShell process at runtime; do not save them in this file, `application.properties`, Postman exports, or Git.
 
 ## 1. Open PowerShell in `Backend`
 
@@ -46,6 +46,17 @@ Set-SessionSecret 'SUPABASE_SERVICE_ROLE_KEY' 'Supabase service-role key (server
 
 These variables are available to Quarkus and child processes started from this PowerShell window. Closing the window clears them. Re-enter them in a new window. Never set the database password to the Supabase `postgres` owner password; use the password for the dedicated read-only role.
 
+### Optional Phase 2.A organization database
+
+The store/team APIs use a separate login so they do not expand the existing applicant datasource. `database/phase_2a_organization.sql` is maintained as a reference migration; the owner reports that the role and schema have now been set up in Supabase. Set these values in the PowerShell window before starting Quarkus:
+
+```powershell
+$env:RECRUITFLOW_ORG_DB_ENABLED = 'true'
+Set-SessionSecret 'RECRUITFLOW_ORG_DB_PASSWORD' 'Password for recruitflow_backend_org'
+```
+
+Set `RECRUITFLOW_ORG_DB_USERNAME` only if the role name or project reference differs from the configured default. Do not use the `postgres` owner password or the service-role key as this database password. When the flag is absent/false, both the organization datasource and its Hibernate persistence unit stay inactive; the existing Phase 2 connection remains available while the new organization routes return `503`.
+
 ## 3. Start Quarkus
 
 Run in the same PowerShell window where the variables were set:
@@ -67,7 +78,7 @@ Invoke-RestMethod 'http://localhost:8080/q/health/ready' | ConvertTo-Json -Depth
 
 The readiness response should report `UP`, including the PostgreSQL connection checks. If it reports `DOWN`, confirm the restricted-role password, pooler settings, network access, and that Quarkus was started from the window that has the environment variables.
 
-## 5. Test login and admin APIs
+## 5. Test login, admin, and Phase 2.A organization APIs
 
 Open a second PowerShell window for the API calls. The Quarkus server stays running in the first window. The second window does not need the database password or service-role key; it only needs a fresh Super Admin login. Never paste access tokens or passwords into Git-tracked files. Treat tokens like passwords and do not share them in screenshots or chat.
 
@@ -212,3 +223,9 @@ Add these environment variables under the service's **Environment** page:
 Render supplies `PORT`; Quarkus reads it from the environment. Do not set the database password to the Supabase `postgres` owner password. After adding the variables, choose **Save, rebuild, and deploy**. Wait for the service's deploy to reach **Live** and verify `/q/health/ready` returns `UP` before testing login or admin routes.
 
 If GitHub CI is connected to the branch, enable Render's CI check gating if that option is available so deploys wait for the backend CI workflow to pass.
+
+### Phase 2.A role setup and APIs
+
+Use the existing Super Admin account API to create or assign `MANAGER`, `TEAM_LEAD`, and `RECRUITER` roles. Each user should log in again after a role change so the token contains the current trusted role. Import the Postman collection and use the **Phase 2.A - Store & Team Management** nested folder under Local. Manager requests create a store, then assign existing Team Lead and Recruiter accounts. A Recruiter submits aggregate progress using `PUT /api/v1/recruiter/progress/{periodStart}`; their Team Lead reads it using `GET /api/v1/team-lead/recruiters/{recruiterId}/progress`.
+
+Progress is self-reported for now. It is not joined to `public.job_applications`; Phase 2.A does not change applicant records or the n8n workflow. See `PHASE_2A_STORE_AND_TEAM_MANAGEMENT.md` for route details and access boundaries.

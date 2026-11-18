@@ -158,7 +158,7 @@ This is the implemented Phase 1 scope, expanded from the original Gmail-only pro
 ------------------------------------------------------------------------
 # Phase 2 --- Supabase data model and Quarkus backend foundation
 
-**Status: Complete (2026-11-17).** The Quarkus backend foundation is in `Backend`; its restricted read-only connection to live Supabase Postgres and health/readiness checks were verified. A backend-only GitHub Actions CI pipeline is in place, with successful checks on `backend_dev` and pull requests. Applicant APIs, HR authentication, dashboard work, deployment, and routing n8n writes through the backend remain future phases.
+**Status: Complete (2026-11-17).** The Quarkus backend foundation is in `Backend`; its restricted read-only connection to live Supabase Postgres and health/readiness checks were verified. A backend-only GitHub Actions CI pipeline is in place, with successful checks on `backend_dev` and pull requests. Applicant APIs, dashboard work, deployment, and routing n8n writes through the backend remain future phases. The current Supabase Auth and Super Admin user-management foundation is implemented in `Backend`.
 
 **Goal:** Prepare a secure Quarkus foundation that reads the data created in Phase 1. Keep Supabase Postgres as the single source of truth. Do not create a parallel MySQL database, copy applicant records, or move the live n8n writes yet.
 
@@ -206,9 +206,61 @@ This is the implemented Phase 1 scope, expanded from the original Gmail-only pro
 - [x] No applicant data endpoint is exposed in Phase 2; authentication/authorization remains required before Phase 3 APIs expose applicant data.
 - [x] Phase 1 n8n intake continues unchanged and remains the only writer.
 
-**Phase 2 deliverable (complete):** A documented Quarkus foundation that securely checks the existing Supabase Postgres connection with a restricted role, avoids schema/data writes, preserves Phase 1 intake, and runs backend-only CI. The next work is Phase 3: design and implement authenticated REST APIs.
+**Phase 2 deliverable (complete):** A documented Quarkus foundation that securely checks the existing Supabase Postgres connection with a restricted role, avoids schema/data writes, preserves Phase 1 intake, and runs backend-only CI. The next work is Phase 2.A store/team management, followed by the Phase 3 applicant and recruitment APIs.
 
 Supabase references: [Connecting to Postgres](https://supabase.com/docs/guides/database/connecting-to-postgres), [Postgres roles](https://supabase.com/docs/guides/database/postgres/roles), and [Securing your data](https://supabase.com/docs/guides/database/secure-data). Quarkus references: [Maven tooling](https://quarkus.io/guides/maven-tooling), [Hibernate ORM](https://quarkus.io/guides/hibernate-orm), and [SmallRye Health](https://quarkus.io/guides/smallrye-health).
+
+------------------------------------------------------------------------
+# Phase 2.A --- Store, team, and recruiter progress APIs
+
+**Status:** Implementation prepared locally in `Backend`; not submitted. The separate organization database role and SQL migration are not configured or applied, and the APIs still need runtime verification against a configured local database.
+
+**Goal:** Let Managers manage stores and reporting assignments; let Team Leads monitor assigned Recruiters. Preserve the existing read-only applicant datasource, Phase 1 table, and n8n workflow.
+
+### Phase 2.A role model
+
+- `SUPER_ADMIN` creates Auth accounts and assigns trusted roles using the existing admin API.
+- `MANAGER` creates/reads/updates/archives only their own stores, assigns existing Team Leads to stores, and assigns existing Recruiters to Team Leads.
+- `TEAM_LEAD` reads assigned stores/recruiters and views those Recruiters' progress reports.
+- `RECRUITER` submits and views its own progress reports while assigned to a Team Lead.
+- Assignment target roles are validated from Supabase Auth `app_metadata.role`. Managers cannot create users or change account roles.
+
+### Phase 2.A data boundary
+
+- Use a new private `recruitflow` schema and `Backend/database/phase_2a_organization.sql`.
+- Keep the existing default JDBC datasource and `public.job_applications` mapping read-only.
+- Use a named `organization` datasource with a separate `recruitflow_backend_org` login. It is inactive unless `RECRUITFLOW_ORG_DB_ENABLED=true`; credentials stay external.
+- Retain assignment history by ending assignments instead of deleting them. Store delete archives a store and is rejected while a Team Lead remains assigned.
+- Store/recruiter reports carry aggregate, self-reported progress counts. The Phase 1 applicant table does not map applications to Recruiters, so Phase 2.A does not change it and does not claim these counts are system-verified.
+- Headcount caps, employee rosters, headcount approvals, and n8n automation are later work. Store employee/service-crew records are not login accounts.
+
+### Phase 2.A step-by-step
+
+1. Add `MANAGER` and `TEAM_LEAD` to the trusted application role set; retain Super Admin-only account/role administration.
+2. Add the isolated organization model, repository, service, DTO, and REST resource packages.
+3. Add store CRUD/archive, Manager-scoped team assignments, and Manager-to-Manager store ownership transfer; validate each target user's role and restrict access to the caller's stores.
+4. Add Team Lead read APIs for assigned stores/recruiters and Recruiter progress history; add Recruiter self-report read/upsert APIs.
+5. Prepare the separate schema and role grants/RLS as review-only SQL. Do not apply them automatically or change the existing database role.
+6. Add the optional named datasource with a disabled-by-default switch and a readiness check that does not break the existing Phase 2 readiness when disabled.
+7. Mirror all new calls in the Local and Live Postman collection folders and document environment setup.
+8. Configure the new database login, review/apply the migration, and run runtime security and API checks before marking this enhancement complete.
+9. Keep n8n out of this enhancement; later it can call these backend APIs for notifications after the APIs and data are verified.
+
+### Phase 2.A tasks
+
+- [x] Add `MANAGER` and `TEAM_LEAD` as trusted Supabase Auth application roles.
+- [x] Add scoped store CRUD/archive and Manager assignment APIs.
+- [x] Add Manager-only store ownership transfer so an active store can be handed to another Manager.
+- [x] Add Team Lead roster/progress read APIs and Recruiter self-reported progress APIs.
+- [x] Keep new writable models in a separate organization persistence unit and preserve the existing read-only applicant datasource.
+- [x] Prepare the separate organization-schema SQL without applying it to the live database.
+- [x] Add mirrored Local/Live Postman requests and setup documentation.
+- [x] Run a clean Maven package build (tests skipped); runtime API and database authorization checks remain pending.
+- [ ] Create the `recruitflow_backend_org` login and apply the reviewed schema migration.
+- [ ] Set local/Render organization datasource credentials and enable the new persistence unit.
+- [ ] Compile and exercise routes against a configured database; verify role and cross-store isolation, assignment history, archive guards, and progress visibility.
+
+**Phase 2.A deliverable:** Manager store CRUD and team assignments, Team Lead monitoring of assigned Recruiter progress, and a separate database boundary ready for a reviewed local/live setup. This enhancement does not include headcount approval or n8n automation.
 
 ------------------------------------------------------------------------
 # Phase 3 --- Core Quarkus REST APIs
@@ -483,6 +535,7 @@ human-reviewed, job-specific AI assistance.
 | 0 | Project preparation | Repository and development environment ready |
 | 1 | Gmail + n8n + AI + Supabase intake | CV validation, AI extraction, database save, applicant acknowledgment (complete) |
 | 2 | Data contract + Quarkus foundation | Complete: restricted Supabase connection, health checks, read-only foundation, backend CI |
+| 2.A | Store, team, and recruiter progress APIs | Prepared locally; organization database role/migration and runtime verification pending |
 | 3 | Core REST APIs | Authenticated applicant, job, and application operations |
 | 4 | n8n + backend integration | n8n sends application data through Quarkus into the same Supabase database |
 | 5 | HR dashboard | HR can review candidates and manage statuses |
@@ -505,4 +558,4 @@ Before marking a phase complete:
 
 ## First task to begin
 
-Begin Phase 3 by defining the authenticated REST API contract and HR access model. Design the applicant, application, and job relationships for API needs, then implement protected endpoints with DTO validation and authorization. Keep the existing n8n workflow as the intake writer until the secured ingestion API is ready in Phase 4.
+Complete Phase 2.A by setting up the separate organization database role, reviewing/applying its migration, and verifying Manager store assignments and Team Lead progress visibility. Then continue with authenticated applicant, application, and job APIs in Phase 3. Keep n8n out of the current enhancement; route intake through Quarkus only in Phase 4.
